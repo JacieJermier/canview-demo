@@ -419,6 +419,8 @@ export default function ClinicalCockpit() {
   const [selectedVisit, setSelectedVisit] = useState(0);
   const [activeTab, setActiveTab] = useState("trends");
   const [imageTab, setImageTab] = useState("oct");
+  const [viewMode, setViewMode] = useState("patient");
+  const [practiceQuery, setPracticeQuery] = useState("");
 
   const current = VISITS[0];
   const baseline = VISITS[VISITS.length - 1];
@@ -445,10 +447,112 @@ export default function ClinicalCockpit() {
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+          <div style={{ display: "flex", background: "var(--bg)", borderRadius: 6, border: "1px solid var(--border)", overflow: "hidden" }}>
+            {[{ id: "patient", label: "Patient View" }, { id: "practice", label: "Practice Search" }].map(m => (
+              <button key={m.id} onClick={() => setViewMode(m.id)} style={{ padding: "6px 14px", fontSize: 11, fontWeight: viewMode === m.id ? 600 : 400, cursor: "pointer", border: "none", fontFamily: "'DM Sans', sans-serif", background: viewMode === m.id ? "var(--accent)" : "transparent", color: viewMode === m.id ? "white" : "var(--text-secondary)", transition: "all 0.15s" }}>{m.label}</button>
+            ))}
+          </div>
           <div className="compare-badge">Last visit: {previous.label} · Next: Aug 2026</div>
           <div style={{ width: 32, height: 32, borderRadius: "50%", background: "var(--accent)", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 600 }}>SW</div>
         </div>
       </div>
+
+      {/* Practice Search Mode */}
+      {viewMode === "practice" && (
+        <div style={{ padding: "20px 28px", maxWidth: 1440, margin: "0 auto" }}>
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header">
+              <div className="card-title">Practice-Level Search</div>
+              <div className="compare-badge">Circle of Care · UW Optometry Clinic · 2,847 patients</div>
+            </div>
+            <div className="card-body">
+              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
+                <input type="text" value={practiceQuery} onChange={e => setPracticeQuery(e.target.value)} placeholder="e.g. Glaucoma patients with IOP above target on current medication..." style={{ flex: 1, padding: "10px 14px", background: "var(--bg)", border: "1px solid var(--border)", borderRadius: 6, color: "var(--text-primary)", fontSize: 13, fontFamily: "'DM Sans', sans-serif", outline: "none" }} />
+                <button style={{ padding: "10px 20px", background: "var(--accent)", border: "none", borderRadius: 6, color: "white", fontWeight: 600, fontSize: 13, cursor: "pointer", fontFamily: "'DM Sans', sans-serif" }}>Search</button>
+              </div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {["Glaucoma patients with IOP > 21", "RNFL thinning > 5μm since last visit", "Patients overdue for visual field test", "Uncontrolled IOP on dual therapy", "New patients presenting as asymptomatic with findings"].map((q, i) => (
+                  <button key={i} onClick={() => setPracticeQuery(q)} style={{ padding: "5px 10px", border: "1px solid var(--border)", borderRadius: 20, fontSize: 11, cursor: "pointer", background: "var(--surface)", color: "var(--text-secondary)", fontFamily: "'DM Sans', sans-serif" }}>{q}</button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 16 }}>
+            {[{ label: "Matching Patients", value: "142", color: "var(--accent)" }, { label: "Above IOP Target", value: "38", color: "var(--decline)" }, { label: "Fast Progressors", value: "12", color: "var(--decline)" }, { label: "Asymptomatic w/ Findings", value: "67", color: "var(--caution)" }].map((s, i) => (
+              <div key={i} className="card" style={{ padding: 16 }}>
+                <div style={{ fontSize: 10, color: "var(--text-tertiary)", textTransform: "uppercase", letterSpacing: "0.04em" }}>{s.label}</div>
+                <div style={{ fontSize: 28, fontWeight: 300, color: s.color, fontFamily: "'JetBrains Mono', monospace", marginTop: 4 }}>{s.value}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card-header">
+              <div className="card-title">Matching Patients</div>
+              <div style={{ fontSize: 11, color: "var(--text-tertiary)" }}>Sorted by progression severity</div>
+            </div>
+            <div className="card-body" style={{ padding: 0 }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+                <thead>
+                  <tr style={{ borderBottom: "2px solid var(--border)" }}>
+                    {["Patient", "Age", "Dx", "IOP (OD/OS)", "RNFL Change", "VF MD Rate", "Last Visit", "Status"].map(h => (
+                      <th key={h} style={{ padding: "10px 14px", textAlign: "left", color: "var(--text-tertiary)", fontWeight: 500, fontSize: 11 }}>{h}</th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { name: "M. Chen", age: 62, dx: "POAG", iop: "24/22", rnfl: "-12μm", vfRate: "-0.9 dB/yr", lastVisit: "Feb 2026", status: "urgent" },
+                    { name: "R. Patel", age: 58, dx: "POAG", iop: "26/24", rnfl: "-9μm", vfRate: "-0.7 dB/yr", lastVisit: "Jan 2026", status: "watch" },
+                    { name: "J. Wilson", age: 71, dx: "POAG suspect", iop: "22/20", rnfl: "-7μm", vfRate: "-0.5 dB/yr", lastVisit: "Dec 2025", status: "watch" },
+                    { name: "L. Kim", age: 45, dx: "OHT", iop: "23/23", rnfl: "-3μm", vfRate: "-0.2 dB/yr", lastVisit: "Feb 2026", status: "stable" },
+                    { name: "S. Nair", age: 66, dx: "POAG", iop: "19/18", rnfl: "-2μm", vfRate: "-0.1 dB/yr", lastVisit: "Jan 2026", status: "stable" },
+                  ].map((p, i) => (
+                    <tr key={i} style={{ borderBottom: "1px solid var(--border-light)", cursor: "pointer" }} onClick={() => setViewMode("patient")}>
+                      <td style={{ padding: "10px 14px", fontWeight: 500 }}>{p.name}</td>
+                      <td style={{ padding: "10px 14px" }}>{p.age}</td>
+                      <td style={{ padding: "10px 14px" }}>{p.dx}</td>
+                      <td style={{ padding: "10px 14px", fontFamily: "'JetBrains Mono', monospace" }}>{p.iop}</td>
+                      <td style={{ padding: "10px 14px", fontFamily: "'JetBrains Mono', monospace", color: parseInt(p.rnfl) < -5 ? "var(--decline)" : "var(--text-secondary)" }}>{p.rnfl}</td>
+                      <td style={{ padding: "10px 14px", fontFamily: "'JetBrains Mono', monospace", color: parseFloat(p.vfRate) < -0.5 ? "var(--decline)" : "var(--text-secondary)" }}>{p.vfRate}</td>
+                      <td style={{ padding: "10px 14px", color: "var(--text-tertiary)" }}>{p.lastVisit}</td>
+                      <td style={{ padding: "10px 14px" }}>
+                        <span style={{ fontSize: 10, padding: "2px 8px", borderRadius: 4, fontWeight: 500, background: p.status === "urgent" ? "var(--decline-bg)" : p.status === "watch" ? "var(--caution-bg)" : "var(--stable-bg)", color: p.status === "urgent" ? "var(--decline)" : p.status === "watch" ? "var(--caution)" : "var(--stable)", border: `1px solid ${p.status === "urgent" ? "var(--decline-light)" : p.status === "watch" ? "#FDE68A" : "#A7F3D0"}` }}>
+                          {p.status === "urgent" ? "⚠ Urgent" : p.status === "watch" ? "◉ Watch" : "✓ Stable"}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div className="card">
+            <div className="card-header"><div className="card-title">Practice Insights</div></div>
+            <div className="card-body">
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 12 }}>
+                <div className="insight-card">
+                  <div className="insight-tag">Asymptomatic Alert</div>
+                  <div className="insight-text">67 patients who presented as asymptomatic had clinically significant findings detected at their last exam, including new diagnoses, RNFL changes, or IOP elevation.</div>
+                </div>
+                <div className="insight-card">
+                  <div className="insight-tag">Treatment Gap</div>
+                  <div className="insight-text">38 glaucoma patients have IOP above target ({">"} 21 mmHg) on their current medication regimen. 12 of these are on dual therapy and may need referral for SLT or surgical evaluation.</div>
+                </div>
+                <div className="insight-card">
+                  <div className="insight-tag">Follow-up Overdue</div>
+                  <div className="insight-text">23 patients with known POAG have not been seen in over 12 months. 8 of these were classified as fast progressors at their last visit.</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Patient View Mode */}
+      {viewMode === "patient" && (<>
 
       {/* Patient Banner */}
       <div className="patient-banner">
@@ -826,6 +930,7 @@ export default function ClinicalCockpit() {
           </div>
         </div>
       </div>
+      </>)}
     </div>
   );
 }
